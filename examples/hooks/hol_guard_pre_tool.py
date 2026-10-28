@@ -27,7 +27,7 @@ def evaluate(event: dict) -> int:
         return _block("hol-guard is not installed")
     try:
         completed = subprocess.run(
-            [executable, "command", "test", command, "--json"],
+            [executable, "command", "test", "--json", "--", command],
             capture_output=True,
             text=True,
             timeout=_GUARD_TIMEOUT_SECONDS,
