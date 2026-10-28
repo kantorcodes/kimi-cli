@@ -31,3 +31,21 @@ def test_missing_command_or_guard_blocks(monkeypatch) -> None:
     assert module.evaluate(_event("")) == 2
     monkeypatch.setattr(module.shutil, "which", lambda _: None)
     assert module.evaluate(_event()) == 2
+
+
+@pytest.mark.parametrize("command", ["-n", "--help", "echo 'hello world'", "printf 'a\\nb'"])
+def test_guard_command_remains_one_positional_argument(monkeypatch, command: str) -> None:
+    """Prevent a command starting with '-' from becoming a Guard CLI option."""
+    calls = []
+
+    def fake_run(argv, **kwargs):
+        calls.append(argv)
+        return SimpleNamespace(
+            returncode=0,
+            stdout='{"classification":{"explicitly_benign":true},"minimum_action":"allow"}',
+        )
+
+    monkeypatch.setattr(module.shutil, "which", lambda _: "/usr/bin/hol-guard")
+    monkeypatch.setattr(module.subprocess, "run", fake_run)
+    assert module.evaluate(_event(command)) == 0
+    assert calls == [["/usr/bin/hol-guard", "command", "test", "--json", "--", command]]
